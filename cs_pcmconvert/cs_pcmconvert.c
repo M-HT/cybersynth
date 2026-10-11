@@ -94,10 +94,10 @@ unsigned char cs_effects_enabled = 1;
 unsigned char cs_chorus_enabled = 1;
 unsigned char cs_reverb_enabled = 1;
 unsigned char cs_midi_mode = 1; // 0 = CyberSound Mode, 1 = GM Mode, 2 = GS Mode
-unsigned int cs_number_of_voices = 32; // 0-128
-unsigned int cs_sound_cache_size = 8192; // 2048-16384 kilobytes
+unsigned int cs_number_of_voices = 128; // 1-128
+unsigned int cs_sound_cache_size = 16384; // 2048-16384 kilobytes
 unsigned char cs_simd_enabled = 1;
-int32_t cs_volume_multiplier = 1 << 11; // linear volume multiplier in fixed-point format s.4.11
+int32_t cs_volume_multiplier = 8192; // linear volume multiplier in fixed-point format s.4.11
 #ifdef __cplusplus
 }
 #endif
@@ -112,10 +112,7 @@ const static unsigned int frequency = 22050;
 #ifdef __cplusplus
 extern "C"
 #endif
-uint32_t CCALL CS_GetTime(void)
-{
-    return current_time;
-}
+uint32_t CCALL CS_GetTime(void) return current_time;
 
 
 static INLINE void WRITE_LE_UINT16(uint8_t *ptr, uint16_t value)
@@ -137,26 +134,17 @@ static void usage(const char *progname)
 {
     static const char basename[] = "cs_pcmconvert";
 
-    if (progname == NULL)
-    {
-        progname = basename;
-    }
+    if (progname == NULL) progname = basename;
     else
     {
         const char *slash;
 
         slash = strrchr(progname, '/');
-        if (slash != NULL)
-        {
-            progname = slash + 1;
-        }
+        if (slash != NULL) progname = slash + 1;
 
 #ifdef _WIN32
         slash = strrchr(progname, '\\');
-        if (slash != NULL)
-        {
-            progname = slash + 1;
-        }
+        if (slash != NULL) progname = slash + 1;
 #endif
     }
 
@@ -167,7 +155,7 @@ static void usage(const char *progname)
         "  -s       Output raw data do stdout\n"
         "  -o PATH  Output path (path to .wav)\n"
         "  -w PATH  Datafiles path (path to directory with *.iss files)\n"
-        "  -p NUM   Polyphony (1-256)\n"
+        "  -p NUM   Polyphony (1-128)\n"
         "  -e NUM   Effects (0=off, 1=on)\n"
         "  -c NUM   Chorus effect (0=off, 1=on)\n"
         "  -r NUM   Reverb effect (0=off, 1=on)\n"
@@ -232,10 +220,7 @@ int main(int argc, char *argv[])
                         {
                             i++;
                             j = atoi(argv[i]);
-                            if (j > 0)
-                            {
-                                cs_number_of_voices = j;
-                            }
+                            if (j > 0) cs_number_of_voices = j;
                         }
                         break;
                     case 'e': // effects
@@ -243,10 +228,7 @@ int main(int argc, char *argv[])
                         {
                             i++;
                             j = atoi(argv[i]);
-                            if (j >= 0 && j <= 1)
-                            {
-                                cs_effects_enabled = j;
-                            }
+                            if (j >= 0 && j <= 1) cs_effects_enabled = j;
                         }
                         break;
                     case 'c': // chorus effect
@@ -254,10 +236,7 @@ int main(int argc, char *argv[])
                         {
                             i++;
                             j = atoi(argv[i]);
-                            if (j >= 0 && j <= 1)
-                            {
-                                cs_chorus_enabled = j;
-                            }
+                            if (j >= 0 && j <= 1) cs_chorus_enabled = j;
                         }
                         break;
                     case 'r': // reverb effect
@@ -265,10 +244,7 @@ int main(int argc, char *argv[])
                         {
                             i++;
                             j = atoi(argv[i]);
-                            if (j >= 0 && j <= 1)
-                            {
-                                cs_reverb_enabled = j;
-                            }
+                            if (j >= 0 && j <= 1) cs_reverb_enabled = j;
                         }
                         break;
                     case 'g': // volume gain in decibels
@@ -276,10 +252,7 @@ int main(int argc, char *argv[])
                         {
                             i++;
                             k = atof(argv[i]);
-                            if (k > 0.0 && k <= 24.0)
-                            {
-                                cs_volume_multiplier = (int32_t)(pow(10.0, k / 20.0) * 2048.0);
-                            }
+                            if (k > 0.0 && k <= 24.0) cs_volume_multiplier = (int32_t)(pow(10.0, k / 20.0) * 8192.0);
                         }
                         break;
                     case 'm': // MIDI mode
@@ -287,10 +260,7 @@ int main(int argc, char *argv[])
                         {
                             i++;
                             j = atoi(argv[i]);
-                            if (j >= 0 && j <= 2)
-                            {
-                                cs_midi_mode = j;
-                            }
+                            if (j >= 0 && j <= 2) cs_midi_mode = j;
                         }
                         break;
                     case 'k': // sound cache size in kilobytes
@@ -298,10 +268,7 @@ int main(int argc, char *argv[])
                         {
                             i++;
                             j = atoi(argv[i]);
-                            if (j >= 2048 && j <= 16384)
-                            {
-                                cs_sound_cache_size = j;
-                            }
+                            if (j >= 2048 && j <= 16384) cs_sound_cache_size = j;
                         }
                         break;
                     case 'x': // SIMD instructions
@@ -309,10 +276,7 @@ int main(int argc, char *argv[])
                         {
                             i++;
                             j = atoi(argv[i]);
-                            if (j >= 0 && j <= 1)
-                            {
-                                cs_simd_enabled = j;
-                            }
+                            if (j >= 0 && j <= 1) cs_simd_enabled = j;
                         }
                         break;
                     case 'h': // help
@@ -321,10 +285,7 @@ int main(int argc, char *argv[])
                         break;
                 }
             }
-            else if (strcmp(argv[i], "--help") == 0)
-            {
-                usage(argv[0]);
-            }
+            else if (strcmp(argv[i], "--help") == 0) usage(argv[0]);
         }
     }
 
@@ -481,9 +442,7 @@ int main(int argc, char *argv[])
                         }
                         else
 #endif
-                        {
-                            CS_SynthesizerMidi(cur_event->data, cur_event->len);
-                        }
+                        CS_SynthesizerMidi(cur_event->data, cur_event->len);
                     }
                 }
                 else
@@ -503,9 +462,7 @@ int main(int argc, char *argv[])
                             }
                             else
 #endif
-                            {
-                                CS_SynthesizerMidi(cur_event->sysex, cur_event->len);
-                            }
+                            CS_SynthesizerMidi(cur_event->sysex, cur_event->len);
                         }
                     }
                 }
@@ -575,10 +532,7 @@ int main(int argc, char *argv[])
 
     // free MIDI file
 #if !defined(x86_malloc)
-    if (sizeof(void *) > 4)
-    {
-        x86_free(input_buffer);
-    }
+    if (sizeof(void *) > 4) x86_free(input_buffer);
 #endif
     free_midi_data(midi_events);
 
@@ -588,4 +542,3 @@ int main(int argc, char *argv[])
 
     return return_value;
 }
-

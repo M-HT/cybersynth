@@ -60,10 +60,10 @@ unsigned char cs_effects_enabled = 1;
 unsigned char cs_chorus_enabled = 1;
 unsigned char cs_reverb_enabled = 1;
 unsigned char cs_midi_mode = 1; // 0 = CyberSound Mode, 1 = GM Mode, 2 = GS Mode
-unsigned int cs_number_of_voices = 32; // 0-128
-unsigned int cs_sound_cache_size = 8192; // 2048-16384 kilobytes
+unsigned int cs_number_of_voices = 128; // 1-128
+unsigned int cs_sound_cache_size = 16384; // 2048-16384 kilobytes
 unsigned char cs_simd_enabled = 1;
-int32_t cs_volume_multiplier = 1 << 11; // linear volume multiplier in fixed-point format s.4.11
+int32_t cs_volume_multiplier = 8192; // linear volume multiplier in fixed-point format s.4.11
 #ifdef __cplusplus
 }
 #endif
@@ -111,10 +111,7 @@ static void set_thread_scheduler(void)
 
     memset(&param, 0, sizeof(struct sched_param));
     param.sched_priority = sched_get_priority_min(SCHED_FIFO);
-    if (param.sched_priority > 0)
-    {
-        sched_setscheduler(0, SCHED_FIFO, &param);
-    }
+    if (param.sched_priority > 0) sched_setscheduler(0, SCHED_FIFO, &param);
 }
 
 static void wait_for_midi_initialization(void) __attribute__((noinline));
@@ -140,19 +137,10 @@ static void subscription_event(snd_seq_event_t *event)
     err = snd_seq_get_any_client_info(midi_seq, event->data.connect.sender.client, cinfo);
     if (err >= 0)
     {
-        if (event->type == SND_SEQ_EVENT_PORT_SUBSCRIBED)
-        {
-            printf("Client subscribed: %s\n", snd_seq_client_info_get_name(cinfo));
-        }
-        else
-        {
-            printf("Client unsubscribed: %s\n", snd_seq_client_info_get_name(cinfo));
-        }
+        if (event->type == SND_SEQ_EVENT_PORT_SUBSCRIBED) printf("Client subscribed: %s\n", snd_seq_client_info_get_name(cinfo));
+        else printf("Client unsubscribed: %s\n", snd_seq_client_info_get_name(cinfo));
     }
-    else
-    {
-        printf("Client unsubscribed\n");
-    }
+    else printf("Client unsubscribed\n");
 }
 
 static void write_event(const uint8_t *event, unsigned int length)
@@ -164,14 +152,8 @@ static void write_event(const uint8_t *event, unsigned int length)
     read_index = event_read_index;
     write_index = event_write_index;
 
-    if (write_index >= read_index)
-    {
-        free_space = 65535 - (write_index - read_index);
-    }
-    else
-    {
-        free_space = (read_index - write_index) - 1;
-    }
+    if (write_index >= read_index) free_space = 65535 - (write_index - read_index);
+    else free_space = (read_index - write_index) - 1;
 
     if (length > free_space)
     {
@@ -210,10 +192,7 @@ static void process_event(snd_seq_event_t *event, uint8_t *running_status)
                 *running_status = data[0];
                 write_event(data, length);
             }
-            else
-            {
-                write_event(data + 1, length - 1);
-            }
+            else write_event(data + 1, length - 1);
 
 #ifdef PRINT_EVENTS
             printf("Note ON, channel:%d note:%d velocity:%d\n", event->data.note.channel, event->data.note.note, event->data.note.velocity);
@@ -233,10 +212,7 @@ static void process_event(snd_seq_event_t *event, uint8_t *running_status)
                 *running_status = data[0];
                 write_event(data, length);
             }
-            else
-            {
-                write_event(data + 1, length - 1);
-            }
+            else write_event(data + 1, length - 1);
 
 #ifdef PRINT_EVENTS
             printf("Note OFF, channel:%d note:%d velocity:%d\n", event->data.note.channel, event->data.note.note, event->data.note.velocity);
@@ -257,10 +233,7 @@ static void process_event(snd_seq_event_t *event, uint8_t *running_status)
                 *running_status = data[0];
                 write_event(data, length);
             }
-            else
-            {
-                write_event(data + 1, length - 1);
-            }
+            else write_event(data + 1, length - 1);
 #endif
 
 #ifdef PRINT_EVENTS
@@ -280,10 +253,7 @@ static void process_event(snd_seq_event_t *event, uint8_t *running_status)
                 *running_status = data[0];
                 write_event(data, length);
             }
-            else
-            {
-                write_event(data + 1, length - 1);
-            }
+            else write_event(data + 1, length - 1);
 
 #ifdef PRINT_EVENTS
             printf("Controller, channel:%d param:%d value:%d\n", event->data.control.channel, event->data.control.param, event->data.control.value);
@@ -301,10 +271,7 @@ static void process_event(snd_seq_event_t *event, uint8_t *running_status)
                 *running_status = data[0];
                 write_event(data, length);
             }
-            else
-            {
-                write_event(data + 1, length - 1);
-            }
+            else write_event(data + 1, length - 1);
 
 #ifdef PRINT_EVENTS
             printf("Program change, channel:%d value:%d\n", event->data.control.channel, event->data.control.value);
@@ -322,10 +289,7 @@ static void process_event(snd_seq_event_t *event, uint8_t *running_status)
                 *running_status = data[0];
                 write_event(data, length);
             }
-            else
-            {
-                write_event(data + 1, length - 1);
-            }
+            else write_event(data + 1, length - 1);
 
 #ifdef PRINT_EVENTS
             printf("Channel pressure, channel:%d value:%d\n", event->data.control.channel, event->data.control.value);
@@ -344,10 +308,7 @@ static void process_event(snd_seq_event_t *event, uint8_t *running_status)
                 *running_status = data[0];
                 write_event(data, length);
             }
-            else
-            {
-                write_event(data + 1, length - 1);
-            }
+            else write_event(data + 1, length - 1);
 
 #ifdef PRINT_EVENTS
             printf("Pitch bend, channel:%d value:%d\n", event->data.control.channel, event->data.control.value);
@@ -370,21 +331,15 @@ static void process_event(snd_seq_event_t *event, uint8_t *running_status)
                     *running_status = data[0];
                     write_event(data, length);
                 }
-                else
-                {
-                    write_event(data + 1, length - 1);
-                }
+                else write_event(data + 1, length - 1);
 
 #ifdef PRINT_EVENTS
                 printf("Controller 14-bit, channel:%d param:%d value:%d\n", event->data.control.channel, event->data.control.param, event->data.control.value);
 #endif
             }
-            else
-            {
 #ifdef PRINT_EVENTS
-                printf("Unknown controller, channel:%d param:%d value:%d\n", event->data.control.channel, event->data.control.param, event->data.control.value);
+            else printf("Unknown controller, channel:%d param:%d value:%d\n", event->data.control.channel, event->data.control.param, event->data.control.value);
 #endif
-            }
 
 
             break;
@@ -408,10 +363,7 @@ static void process_event(snd_seq_event_t *event, uint8_t *running_status)
                 *running_status = data[0];
                 write_event(data, length);
             }
-            else
-            {
-                write_event(data + 1, length - 1);
-            }
+            else write_event(data + 1, length - 1);
 #endif
 
 #ifdef PRINT_EVENTS
@@ -437,10 +389,7 @@ static void process_event(snd_seq_event_t *event, uint8_t *running_status)
                 *running_status = data[0];
                 write_event(data, length);
             }
-            else
-            {
-                write_event(data + 1, length - 1);
-            }
+            else write_event(data + 1, length - 1);
 
 #ifdef PRINT_EVENTS
             printf("RPN, channel:%d param:%d value:%d\n", event->data.control.channel, event->data.control.param, event->data.control.value);
@@ -662,10 +611,7 @@ static void *midi_thread_proc(void *arg)
 
     while (midi_init_state > 0)
     {
-        if (snd_seq_event_input(midi_seq, &event) < 0)
-        {
-            continue;
-        }
+        if (snd_seq_event_input(midi_seq, &event) < 0) continue;
 
         process_event(event, &running_status);
     }
@@ -677,26 +623,20 @@ static void usage(const char *progname)
 {
     static const char basename[] = "cs_alsadrv";
 
-    if (progname == NULL)
-    {
-        progname = basename;
-    }
+    if (progname == NULL) progname = basename;
     else
     {
         const char *slash;
 
         slash = strrchr(progname, '/');
-        if (slash != NULL)
-        {
-            progname = slash + 1;
-        }
+        if (slash != NULL) progname = slash + 1;
     }
 
     printf(
         "%s - CyberSynth\n"
         "Usage: %s [OPTIONS]...\n"
         "  -w PATH  Datafiles path (path to directory with *.iss files)\n"
-        "  -p NUM   Polyphony (1-256)\n"
+        "  -p NUM   Polyphony (1-128)\n"
         "  -e NUM   Effects (0=off, 1=on)\n"
         "  -c NUM   Chorus effect (0=off, 1=on)\n"
         "  -r NUM   Reverb effect (0=off, 1=on)\n"
@@ -718,10 +658,7 @@ static void read_arguments(int argc, char *argv[])
     int i, j;
     double k;
 
-    if (argc <= 1)
-    {
-        return;
-    }
+    if (argc <= 1) return;
 
     for (i = 1; i < argc; i++)
     {
@@ -741,10 +678,7 @@ static void read_arguments(int argc, char *argv[])
                     {
                         i++;
                         j = atoi(argv[i]);
-                        if (j > 0)
-                        {
-                            cs_number_of_voices = j;
-                        }
+                        if (j > 0) cs_number_of_voices = j;
                     }
                     break;
                 case 'e': // effects
@@ -752,10 +686,7 @@ static void read_arguments(int argc, char *argv[])
                     {
                         i++;
                         j = atoi(argv[i]);
-                        if (j >= 0 && j <= 1)
-                        {
-                            cs_effects_enabled = j;
-                        }
+                        if (j >= 0 && j <= 1) cs_effects_enabled = j;
                     }
                     break;
                 case 'c': // chorus effect
@@ -763,10 +694,7 @@ static void read_arguments(int argc, char *argv[])
                     {
                         i++;
                         j = atoi(argv[i]);
-                        if (j >= 0 && j <= 1)
-                        {
-                            cs_chorus_enabled = j;
-                        }
+                        if (j >= 0 && j <= 1) cs_chorus_enabled = j;
                     }
                     break;
                 case 'r': // reverb effect
@@ -774,10 +702,7 @@ static void read_arguments(int argc, char *argv[])
                     {
                         i++;
                         j = atoi(argv[i]);
-                        if (j >= 0 && j <= 1)
-                        {
-                            cs_reverb_enabled = j;
-                        }
+                        if (j >= 0 && j <= 1) cs_reverb_enabled = j;
                     }
                     break;
                 case 'g': // volume gain in decibels
@@ -785,10 +710,7 @@ static void read_arguments(int argc, char *argv[])
                     {
                         i++;
                         k = atof(argv[i]);
-                        if (k > 0.0 && k <= 24.0)
-                        {
-                            cs_volume_multiplier = (int32_t)(pow(10.0, k / 20.0) * 2048.0);
-                        }
+                        if (k > 0.0 && k <= 24.0) cs_volume_multiplier = (int32_t)(pow(10.0, k / 20.0) * 8192.0);
                     }
                     break;
                 case 'm': // MIDI mode
@@ -796,10 +718,7 @@ static void read_arguments(int argc, char *argv[])
                     {
                         i++;
                         j = atoi(argv[i]);
-                        if (j >= 0 && j <= 2)
-                        {
-                            cs_midi_mode = j;
-                        }
+                        if (j >= 0 && j <= 2) cs_midi_mode = j;
                     }
                     break;
                 case 'k': // sound cache size in kilobytes
@@ -807,10 +726,7 @@ static void read_arguments(int argc, char *argv[])
                     {
                         i++;
                         j = atoi(argv[i]);
-                        if (j >= 2048 && j <= 16384)
-                        {
-                            cs_sound_cache_size = j;
-                        }
+                        if (j >= 2048 && j <= 16384) cs_sound_cache_size = j;
                     }
                     break;
                 case 'x': // SIMD instructions
@@ -818,10 +734,7 @@ static void read_arguments(int argc, char *argv[])
                     {
                         i++;
                         j = atoi(argv[i]);
-                        if (j >= 0 && j <= 1)
-                        {
-                            cs_simd_enabled = j;
-                        }
+                        if (j >= 0 && j <= 1) cs_simd_enabled = j;
                     }
                     break;
                 case 'd': // daemonize
@@ -833,10 +746,7 @@ static void read_arguments(int argc, char *argv[])
                     break;
             }
         }
-        else if (strcmp(argv[i], "--help") == 0)
-        {
-            usage(argv[0]);
-        }
+        else if (strcmp(argv[i], "--help") == 0) usage(argv[0]);
     }
 }
 
@@ -883,10 +793,7 @@ static int start_synth(void)
         monotonic_clock_id = CLOCK_MONOTONIC;
         clock_gettime(CLOCK_MONOTONIC, &base_time);
     }
-    else
-    {
-        monotonic_clock_id = CLOCK_MONOTONIC_RAW;
-    }
+    else monotonic_clock_id = CLOCK_MONOTONIC_RAW;
 #else
     clock_gettime(MONOTONIC_CLOCK_TYPE, &base_time);
 #endif
@@ -909,10 +816,7 @@ static int start_synth(void)
 
     // prepare output buffer
     num_subbuffers = (4096 * (int64_t)frequency) / (11025 * (int64_t)samples_per_call);
-    if (num_subbuffers > 65536 / bytes_per_call)
-    {
-        num_subbuffers = 65536 / bytes_per_call;
-    }
+    if (num_subbuffers > 65536 / bytes_per_call) num_subbuffers = 65536 / bytes_per_call;
     if (num_subbuffers < 4)
     {
         stop_synth();
@@ -1143,28 +1047,19 @@ static int drop_privileges(void)
     struct stat statbuf;
     struct passwd *passwdbuf;
 
-    if (getuid() != 0)
-    {
-        return 0;
-    }
+    if (getuid() != 0) return 0;
 
     sudo_id = secure_getenv("SUDO_UID");
     if (sudo_id == NULL)
     {
         sudo_id = secure_getenv("PKEXEC_UID");
-        if (sudo_id == NULL)
-        {
-            return -1;
-        }
+        if (sudo_id == NULL) return -1;
     }
 
     errno = 0;
     llid = strtoll(sudo_id, NULL, 10);
     uid = (uid_t) llid;
-    if (errno != 0 || uid == 0 || llid != (long long int)uid)
-    {
-        return -2;
-    }
+    if (errno != 0 || uid == 0 || llid != (long long int)uid) return -2;
 
     gid = getgid();
     if (gid == 0)
@@ -1173,36 +1068,21 @@ static int drop_privileges(void)
         if (sudo_id == NULL)
         {
             passwdbuf = getpwuid(uid);
-            if (passwdbuf != NULL)
-            {
-                gid = passwdbuf->pw_gid;
-            }
+            if (passwdbuf != NULL) gid = passwdbuf->pw_gid;
 
-            if (gid == 0)
-            {
-                return -3;
-            }
+            if (gid == 0) return -3;
         }
         else
         {
             errno = 0;
             llid = strtoll(sudo_id, NULL, 10);
             gid = (gid_t) llid;
-            if (errno != 0 || gid == 0 || llid != (long long int)gid)
-            {
-                return -4;
-            }
+            if (errno != 0 || gid == 0 || llid != (long long int)gid) return -4;
         }
     }
 
-    if (setgid(gid) != 0)
-    {
-        return -5;
-    }
-    if (setuid(uid) != 0)
-    {
-        return -6;
-    }
+    if (setgid(gid) != 0) return -5;
+    if (setuid(uid) != 0) return -6;
 
     printf("Dropped root privileges\n");
 
@@ -1224,11 +1104,7 @@ static int drop_privileges(void)
             if ((xdg_dir == NULL) || (*xdg_dir == 0))
             {
                 passwdbuf = getpwuid(uid);
-                if (passwdbuf != NULL)
-                {
-                    // also if XDG_CONFIG_HOME is not defined then define it as user's home directory
-                    setenv("XDG_CONFIG_HOME", passwdbuf->pw_dir, 1);
-                }
+                if (passwdbuf != NULL) setenv("XDG_CONFIG_HOME", passwdbuf->pw_dir, 1); // also if XDG_CONFIG_HOME is not defined then define it as user's home directory
             }
         }
     }
@@ -1276,10 +1152,7 @@ static int start_thread(void)
         nanosleep(&req, NULL);
     };
 
-    if (drop_privileges() < 0)
-    {
-        fprintf(stderr, "Error dropping root privileges\n");
-    }
+    if (drop_privileges() < 0) fprintf(stderr, "Error dropping root privileges\n");
 
     return 0;
 }
@@ -1296,10 +1169,7 @@ static void render_audiodata(void)
     if (read_index != write_index)
     {
         // read events from buffer
-        if (read_index < write_index)
-        {
-            CS_SynthesizerMidi(&(event_buffer[read_index]), write_index - read_index);
-        }
+        if (read_index < write_index)CS_SynthesizerMidi(&(event_buffer[read_index]), write_index - read_index);
         else
         {
             CS_SynthesizerMidi(&(event_buffer[read_index]), 65536 - read_index);
@@ -1327,10 +1197,7 @@ static int output_subbuffer(int num)
     while (remaining)
     {
         written = snd_pcm_writei(midi_pcm, buf_ptr, remaining);
-        if (written < 0)
-        {
-            return -1;
-        }
+        if (written < 0) return -1;
 
         remaining -= written;
         buf_ptr += written << 2;
@@ -1345,10 +1212,7 @@ static void main_loop(void)
     int is_paused;
     struct timespec last_written_time, current_time;
 
-    for (unsigned int i = 2; i < num_subbuffers; i++)
-    {
-        output_subbuffer(i);
-    }
+    for (unsigned int i = 2; i < num_subbuffers; i++) output_subbuffer(i);
 
     is_paused = 0;
     // pause pcm playback at the beginning
@@ -1357,11 +1221,7 @@ static void main_loop(void)
         is_paused = 1;
         printf("PCM playback paused\n");
     }
-    else
-    {
-        // if pausing doesn't work then set time of last written event as current time, so the next attempt to pause will be in 60 seconds
-        clock_gettime(MONOTONIC_CLOCK_TYPE, &last_written_time);
-    }
+    else clock_gettime(MONOTONIC_CLOCK_TYPE, &last_written_time); // if pausing doesn't work then set time of last written event as current time, so the next attempt to pause will be in 60 seconds
 
     midi_event_written = 0;
     midi_init_state = 1;
@@ -1392,10 +1252,7 @@ static void main_loop(void)
         }
         else
         {
-            if (is_paused)
-            {
-                continue;
-            }
+            if (is_paused) continue;
 
             clock_gettime(MONOTONIC_CLOCK_TYPE, &current_time);
             // if more than 60 seconds elapsed from last written event, then pause pcm playback
@@ -1407,11 +1264,7 @@ static void main_loop(void)
                     printf("PCM playback paused\n");
                     continue;
                 }
-                else
-                {
-                    // if pausing doesn't work then set time of last written event as current time, so the next attempt to pause will be in 60 seconds
-                    last_written_time = current_time;
-                }
+                else last_written_time = current_time; // if pausing doesn't work then set time of last written event as current time, so the next attempt to pause will be in 60 seconds
             }
         }
 
@@ -1433,16 +1286,10 @@ static void main_loop(void)
                 available_frames = 0;
                 break;
             }
-            else
-            {
-                available_frames -= samples_per_call;
-            }
+            else available_frames -= samples_per_call;
 
             subbuf_counter++;
-            if (subbuf_counter == num_subbuffers)
-            {
-                subbuf_counter = 0;
-            }
+            if (subbuf_counter == num_subbuffers) subbuf_counter = 0;
         };
     };
 }
@@ -1457,10 +1304,7 @@ int main(int argc, char *argv[])
 
     read_arguments(argc, argv);
 
-    if (start_synth() < 0)
-    {
-        return 2;
-    }
+    if (start_synth() < 0) return 2;
 
     if (daemonize)
     {
@@ -1500,4 +1344,3 @@ int main(int argc, char *argv[])
     stop_synth();
     return 0;
 }
-

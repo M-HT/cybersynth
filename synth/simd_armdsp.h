@@ -701,7 +701,7 @@ void CCALL simd_100075CC_c(int32_t counter, uint32_t shift, uint8_t * RESTRICT d
 
     r7 = (int16_t)shift - 1;
 
-    if (cs_volume_multiplier == (1 << 11))
+    if (cs_volume_multiplier == 8192)
     {
         do
         {
@@ -1989,4 +1989,3 @@ void CCALL simd_1000B7C9_c(uint8_t * RESTRICT params1, uint8_t * RESTRICT params
 
     *poffs = offset;
 }
-

@@ -71,10 +71,10 @@ unsigned char cs_effects_enabled = 1;
 unsigned char cs_chorus_enabled = 1;
 unsigned char cs_reverb_enabled = 1;
 unsigned char cs_midi_mode = 1; // 0 = CyberSound Mode, 1 = GM Mode, 2 = GS Mode
-unsigned int cs_number_of_voices = 32; // 0-128
-unsigned int cs_sound_cache_size = 8192; // 2048-16384 kilobytes
+unsigned int cs_number_of_voices = 128; // 1-128
+unsigned int cs_sound_cache_size = 16384; // 2048-16384 kilobytes
 unsigned char cs_simd_enabled = 1;
-int32_t cs_volume_multiplier = 1 << 11; // linear volume multiplier in fixed-point format s.4.11
+int32_t cs_volume_multiplier = 8192; // linear volume multiplier in fixed-point format s.4.11
 #ifdef __cplusplus
 }
 #endif
@@ -117,14 +117,8 @@ static void write_event(const uint8_t *event, unsigned int length)
     read_index = event_read_index;
     write_index = event_write_index;
 
-    if (write_index >= read_index)
-    {
-        free_space = 65535 - (write_index - read_index);
-    }
-    else
-    {
-        free_space = (read_index - write_index) - 1;
-    }
+    if (write_index >= read_index) free_space = 65535 - (write_index - read_index);
+    else free_space = (read_index - write_index) - 1;
 
     if (length > free_space)
     {
@@ -172,10 +166,7 @@ static void midi_read_proc(const MIDIPacketList *pktlist, void * __nullable read
                         *running_status = data[0];
                         write_event(data, length);
                     }
-                    else
-                    {
-                        write_event(data + 1, length - 1);
-                    }
+                    else write_event(data + 1, length - 1);
 
 #ifdef PRINT_EVENTS
                     printf("Note OFF, channel:%d note:%d velocity:%d\n", packet->data[index2] & 0x0f, packet->data[index2 + 1] & 0x7f, packet->data[index2 + 2] & 0x7f);
@@ -195,10 +186,7 @@ static void midi_read_proc(const MIDIPacketList *pktlist, void * __nullable read
                         *running_status = data[0];
                         write_event(data, length);
                     }
-                    else
-                    {
-                        write_event(data + 1, length - 1);
-                    }
+                    else write_event(data + 1, length - 1);
 
 #ifdef PRINT_EVENTS
                     printf("Note ON, channel:%d note:%d velocity:%d\n", packet->data[index2] & 0x0f, packet->data[index2 + 1] & 0x7f, packet->data[index2 + 2] & 0x7f);
@@ -220,10 +208,7 @@ static void midi_read_proc(const MIDIPacketList *pktlist, void * __nullable read
                         *running_status = data[0];
                         write_event(data, length);
                     }
-                    else
-                    {
-                        write_event(data + 1, length - 1);
-                    }
+                    else write_event(data + 1, length - 1);
 #endif
 
 #ifdef PRINT_EVENTS
@@ -244,10 +229,7 @@ static void midi_read_proc(const MIDIPacketList *pktlist, void * __nullable read
                         *running_status = data[0];
                         write_event(data, length);
                     }
-                    else
-                    {
-                        write_event(data + 1, length - 1);
-                    }
+                    else write_event(data + 1, length - 1);
 
 #ifdef PRINT_EVENTS
                     printf("Controller, channel:%d param:%d value:%d\n", packet->data[index2] & 0x0f, packet->data[index2 + 1] & 0x7f, packet->data[index2 + 2] & 0x7f);
@@ -266,10 +248,7 @@ static void midi_read_proc(const MIDIPacketList *pktlist, void * __nullable read
                         *running_status = data[0];
                         write_event(data, length);
                     }
-                    else
-                    {
-                        write_event(data + 1, length - 1);
-                    }
+                    else write_event(data + 1, length - 1);
 
 #ifdef PRINT_EVENTS
                     printf("Program change, channel:%d value:%d\n", packet->data[index2] & 0x0f, packet->data[index2 + 1] & 0x7f);
@@ -288,10 +267,7 @@ static void midi_read_proc(const MIDIPacketList *pktlist, void * __nullable read
                         *running_status = data[0];
                         write_event(data, length);
                     }
-                    else
-                    {
-                        write_event(data + 1, length - 1);
-                    }
+                    else write_event(data + 1, length - 1);
 
 #ifdef PRINT_EVENTS
                     printf("Channel pressure, channel:%d value:%d\n", packet->data[index2] & 0x0f, packet->data[index2 + 1] & 0x7f);
@@ -311,10 +287,7 @@ static void midi_read_proc(const MIDIPacketList *pktlist, void * __nullable read
                         *running_status = data[0];
                         write_event(data, length);
                     }
-                    else
-                    {
-                        write_event(data + 1, length - 1);
-                    }
+                    else write_event(data + 1, length - 1);
 
 #ifdef PRINT_EVENTS
                     printf("Pitch bend, channel:%d value:%d\n", packet->data[index2] & 0x0f, ((packet->data[index2 + 1] & 0x7f) | ((packet->data[index2 + 2] & 0x7f) << 7)) - 0x2000);
@@ -521,10 +494,7 @@ static void midi_read_proc(const MIDIPacketList *pktlist, void * __nullable read
 
                         index2 = packet->length - 1;
                     }
-                    else
-                    {
-                        fprintf(stderr, "Unhandled message: 0x%x\n", packet->data[index2]);
-                    }
+                    else fprintf(stderr, "Unhandled message: 0x%x\n", packet->data[index2]);
                     break;
             }
         }
@@ -766,10 +736,7 @@ static void midi_receive_proc(const MIDIEventList *evtlist, uint8_t *running_sta
                                     *running_status = data[0];
                                     write_event(data, length);
                                 }
-                                else
-                                {
-                                    write_event(data + 1, length - 1);
-                                }
+                                else write_event(data + 1, length - 1);
                             }
 
 #ifdef PRINT_EVENTS
@@ -791,10 +758,7 @@ static void midi_receive_proc(const MIDIEventList *evtlist, uint8_t *running_sta
                                     *running_status = data[0];
                                     write_event(data, length);
                                 }
-                                else
-                                {
-                                    write_event(data + 1, length - 1);
-                                }
+                                else write_event(data + 1, length - 1);
                             }
 
 #ifdef PRINT_EVENTS
@@ -818,10 +782,7 @@ static void midi_receive_proc(const MIDIEventList *evtlist, uint8_t *running_sta
                                     *running_status = data[0];
                                     write_event(data, length);
                                 }
-                                else
-                                {
-                                    write_event(data + 1, length - 1);
-                                }
+                                else write_event(data + 1, length - 1);
                             }
 #endif
 
@@ -844,10 +805,7 @@ static void midi_receive_proc(const MIDIEventList *evtlist, uint8_t *running_sta
                                     *running_status = data[0];
                                     write_event(data, length);
                                 }
-                                else
-                                {
-                                    write_event(data + 1, length - 1);
-                                }
+                                else write_event(data + 1, length - 1);
                             }
 
 #ifdef PRINT_EVENTS
@@ -868,10 +826,7 @@ static void midi_receive_proc(const MIDIEventList *evtlist, uint8_t *running_sta
                                     *running_status = data[0];
                                     write_event(data, length);
                                 }
-                                else
-                                {
-                                    write_event(data + 1, length - 1);
-                                }
+                                else write_event(data + 1, length - 1);
                             }
 
 #ifdef PRINT_EVENTS
@@ -892,10 +847,7 @@ static void midi_receive_proc(const MIDIEventList *evtlist, uint8_t *running_sta
                                     *running_status = data[0];
                                     write_event(data, length);
                                 }
-                                else
-                                {
-                                    write_event(data + 1, length - 1);
-                                }
+                                else write_event(data + 1, length - 1);
                             }
 
 #ifdef PRINT_EVENTS
@@ -917,10 +869,7 @@ static void midi_receive_proc(const MIDIEventList *evtlist, uint8_t *running_sta
                                     *running_status = data[0];
                                     write_event(data, length);
                                 }
-                                else
-                                {
-                                    write_event(data + 1, length - 1);
-                                }
+                                else write_event(data + 1, length - 1);
                             }
 
 #ifdef PRINT_EVENTS
@@ -1039,26 +988,20 @@ static void usage(const char *progname)
 {
     static const char basename[] = "cs_coredrv";
 
-    if (progname == NULL)
-    {
-        progname = basename;
-    }
+    if (progname == NULL) progname = basename;
     else
     {
         const char *slash;
 
         slash = strrchr(progname, '/');
-        if (slash != NULL)
-        {
-            progname = slash + 1;
-        }
+        if (slash != NULL) progname = slash + 1;
     }
 
     printf(
         "%s - CyberSynth\n"
         "Usage: %s [OPTIONS]...\n"
         "  -w PATH  Datafiles path (path to directory with *.iss files)\n"
-        "  -p NUM   Polyphony (1-256)\n"
+        "  -p NUM   Polyphony (1-128)\n"
         "  -e NUM   Effects (0=off, 1=on)\n"
         "  -c NUM   Chorus effect (0=off, 1=on)\n"
         "  -r NUM   Reverb effect (0=off, 1=on)\n"
@@ -1080,10 +1023,7 @@ static void read_arguments(int argc, char *argv[])
     int i, j;
     double k;
 
-    if (argc <= 1)
-    {
-        return;
-    }
+    if (argc <= 1) return;
 
     for (i = 1; i < argc; i++)
     {
@@ -1103,10 +1043,7 @@ static void read_arguments(int argc, char *argv[])
                     {
                         i++;
                         j = atoi(argv[i]);
-                        if (j > 0)
-                        {
-                            cs_number_of_voices = j;
-                        }
+                        if (j > 0) cs_number_of_voices = j;
                     }
                     break;
                 case 'e': // effects
@@ -1114,10 +1051,7 @@ static void read_arguments(int argc, char *argv[])
                     {
                         i++;
                         j = atoi(argv[i]);
-                        if (j >= 0 && j <= 1)
-                        {
-                            cs_effects_enabled = j;
-                        }
+                        if (j >= 0 && j <= 1) cs_effects_enabled = j;
                     }
                     break;
                 case 'c': // chorus effect
@@ -1125,10 +1059,7 @@ static void read_arguments(int argc, char *argv[])
                     {
                         i++;
                         j = atoi(argv[i]);
-                        if (j >= 0 && j <= 1)
-                        {
-                            cs_chorus_enabled = j;
-                        }
+                        if (j >= 0 && j <= 1) cs_chorus_enabled = j;
                     }
                     break;
                 case 'r': // reverb effect
@@ -1136,10 +1067,7 @@ static void read_arguments(int argc, char *argv[])
                     {
                         i++;
                         j = atoi(argv[i]);
-                        if (j >= 0 && j <= 1)
-                        {
-                            cs_reverb_enabled = j;
-                        }
+                        if (j >= 0 && j <= 1) cs_reverb_enabled = j;
                     }
                     break;
                 case 'g': // volume gain in decibels
@@ -1147,10 +1075,7 @@ static void read_arguments(int argc, char *argv[])
                     {
                         i++;
                         k = atof(argv[i]);
-                        if (k > 0.0 && k <= 24.0)
-                        {
-                            cs_volume_multiplier = (int32_t)(pow(10.0, k / 20.0) * 2048.0);
-                        }
+                        if (k > 0.0 && k <= 24.0) cs_volume_multiplier = (int32_t)(pow(10.0, k / 20.0) * 8192.0);
                     }
                     break;
                 case 'm': // MIDI mode
@@ -1158,10 +1083,7 @@ static void read_arguments(int argc, char *argv[])
                     {
                         i++;
                         j = atoi(argv[i]);
-                        if (j >= 0 && j <= 2)
-                        {
-                            cs_midi_mode = j;
-                        }
+                        if (j >= 0 && j <= 2) cs_midi_mode = j;
                     }
                     break;
                 case 'k': // sound cache size in kilobytes
@@ -1169,10 +1091,7 @@ static void read_arguments(int argc, char *argv[])
                     {
                         i++;
                         j = atoi(argv[i]);
-                        if (j >= 2048 && j <= 16384)
-                        {
-                            cs_sound_cache_size = j;
-                        }
+                        if (j >= 2048 && j <= 16384) cs_sound_cache_size = j;
                     }
                     break;
                 case 'x': // SIMD instructions
@@ -1180,10 +1099,7 @@ static void read_arguments(int argc, char *argv[])
                     {
                         i++;
                         j = atoi(argv[i]);
-                        if (j >= 0 && j <= 1)
-                        {
-                            cs_simd_enabled = j;
-                        }
+                        if (j >= 0 && j <= 1) cs_simd_enabled = j;
                     }
                     break;
                 case 'd': // daemonize
@@ -1195,10 +1111,7 @@ static void read_arguments(int argc, char *argv[])
                     break;
             }
         }
-        else if (strcmp(argv[i], "--help") == 0)
-        {
-            usage(argv[0]);
-        }
+        else if (strcmp(argv[i], "--help") == 0) usage(argv[0]);
     }
 }
 
@@ -1312,10 +1225,7 @@ static int start_synth(void)
 
     // prepare output buffer
     num_subbuffers = (4096 * (int64_t)frequency) / (11025 * (int64_t)samples_per_call);
-    if (num_subbuffers > 65536 / bytes_per_call)
-    {
-        num_subbuffers = 65536 / bytes_per_call;
-    }
+    if (num_subbuffers > 65536 / bytes_per_call) num_subbuffers = 65536 / bytes_per_call;
     if (num_subbuffers < 4)
     {
         stop_synth();
@@ -1341,29 +1251,17 @@ static int drop_privileges(void)
     long long int llid;
     struct passwd *passwdbuf;
 
-    if (getuid() != 0)
-    {
-        return 0;
-    }
+    if (getuid() != 0) return 0;
 
-    if (issetugid())
-    {
-        return -1;
-    }
+    if (issetugid()) return -1;
 
     sudo_id = getenv("SUDO_UID");
-    if (sudo_id == NULL)
-    {
-        return -2;
-    }
+    if (sudo_id == NULL) return -2;
 
     errno = 0;
     llid = strtoll(sudo_id, NULL, 10);
     uid = (uid_t) llid;
-    if (errno != 0 || uid == 0 || llid != (long long int)uid)
-    {
-        return -3;
-    }
+    if (errno != 0 || uid == 0 || llid != (long long int)uid) return -3;
 
     gid = getgid();
     if (gid == 0)
@@ -1372,36 +1270,21 @@ static int drop_privileges(void)
         if (sudo_id == NULL)
         {
             passwdbuf = getpwuid(uid);
-            if (passwdbuf != NULL)
-            {
-                gid = passwdbuf->pw_gid;
-            }
+            if (passwdbuf != NULL) gid = passwdbuf->pw_gid;
 
-            if (gid == 0)
-            {
-                return -4;
-            }
+            if (gid == 0) return -4;
         }
         else
         {
             errno = 0;
             llid = strtoll(sudo_id, NULL, 10);
             gid = (gid_t) llid;
-            if (errno != 0 || gid == 0 || llid != (long long int)gid)
-            {
-                return -5;
-            }
+            if (errno != 0 || gid == 0 || llid != (long long int)gid) return -5;
         }
     }
 
-    if (setgid(gid) != 0)
-    {
-        return -6;
-    }
-    if (setuid(uid) != 0)
-    {
-        return -7;
-    }
+    if (setgid(gid) != 0) return -6;
+    if (setuid(uid) != 0) return -7;
 
     printf("Dropped root privileges\n");
 
@@ -1416,10 +1299,7 @@ static void handle_privileges(void)
     // try to increase priority (only root)
     setpriority(PRIO_PROCESS, 0, -20);
 
-    if (drop_privileges() < 0)
-    {
-        fprintf(stderr, "Error dropping root privileges\n");
-    }
+    if (drop_privileges() < 0)fprintf(stderr, "Error dropping root privileges\n");
 }
 
 
@@ -1434,10 +1314,7 @@ static void render_audiodata(void)
     if (read_index != write_index)
     {
         // read events from buffer
-        if (read_index < write_index)
-        {
-            CS_SynthesizerMidi(&(event_buffer[read_index]), write_index - read_index);
-        }
+        if (read_index < write_index) CS_SynthesizerMidi(&(event_buffer[read_index]), write_index - read_index);
         else
         {
             CS_SynthesizerMidi(&(event_buffer[read_index]), 65536 - read_index);
@@ -1459,10 +1336,7 @@ static void audio_callback_proc(void *inUserData, AudioQueueRef inAQ, AudioQueue
     memcpy(midi_queue_buffer[subbuf_counter]->mAudioData, audio_data, bytes_per_call);
     AudioQueueEnqueueBuffer(midi_pcm_queue, midi_queue_buffer[subbuf_counter], 0, NULL);
     subbuf_counter++;
-    if (subbuf_counter == num_subbuffers)
-    {
-        subbuf_counter = 0;
-    }
+    if (subbuf_counter == num_subbuffers) subbuf_counter = 0;
 }
 
 static int open_pcm_output(void) __attribute__((noinline));
@@ -1535,17 +1409,13 @@ static int open_midi_endpoint(void)
 #if (MIDI_API == 0)
     if (__builtin_available(macOS 11.0, *))
 #endif
-    {
-        err = MIDIDestinationCreateWithProtocol(midi_client, CFSTR(MIDI_NAME), kMIDIProtocol_1_0, &midi_endpoint, ^(const MIDIEventList *evtlist, void * __nullable srcConnRefCon) { midi_receive_proc(evtlist, &midi_running_status, srcConnRefCon); } );
-    }
+    err = MIDIDestinationCreateWithProtocol(midi_client, CFSTR(MIDI_NAME), kMIDIProtocol_1_0, &midi_endpoint, ^(const MIDIEventList *evtlist, void * __nullable srcConnRefCon) { midi_receive_proc(evtlist, &midi_running_status, srcConnRefCon); } );
 #endif
 #if (MIDI_API <= 0)
 #if (MIDI_API == 0)
     else
 #endif
-    {
-        err = MIDIDestinationCreate(midi_client, CFSTR(MIDI_NAME), midi_read_proc, &midi_running_status, &midi_endpoint);
-    }
+    err = MIDIDestinationCreate(midi_client, CFSTR(MIDI_NAME), midi_read_proc, &midi_running_status, &midi_endpoint);
 #endif
     if (err != noErr)
     {
@@ -1556,10 +1426,7 @@ static int open_midi_endpoint(void)
 
     printf("MIDI destination is %s\n", MIDI_NAME);
 
-    if (MIDIObjectSetIntegerProperty(midi_endpoint, kMIDIPropertyUniqueID, midi_name_crc32) == noErr)
-    {
-        printf("Unique ID is %i\n", (int)(int32_t)midi_name_crc32);
-    }
+    if (MIDIObjectSetIntegerProperty(midi_endpoint, kMIDIPropertyUniqueID, midi_name_crc32) == noErr) printf("Unique ID is %i\n", (int)(int32_t)midi_name_crc32);
     else
     {
         int32_t unique_id;
@@ -1575,13 +1442,7 @@ static int open_midi_endpoint(void)
             }
         }
 
-        if (err != noErr)
-        {
-            if (MIDIObjectGetIntegerProperty(midi_endpoint, kMIDIPropertyUniqueID, &unique_id) == noErr)
-            {
-                printf("Unique ID is %i\n", (int)unique_id);
-            }
-        }
+        if (err != noErr) if (MIDIObjectGetIntegerProperty(midi_endpoint, kMIDIPropertyUniqueID, &unique_id) == noErr) printf("Unique ID is %i\n", (int)unique_id);
     }
 
     return 0;
@@ -1636,10 +1497,7 @@ static void main_loop(void)
                     printf("PCM playback unpaused\n");
                 }
             }
-            else
-            {
-                continue;
-            }
+            else continue;
         }
 
         CFRunLoopRunInMode(kCFRunLoopDefaultMode, 1, 0);
@@ -1663,11 +1521,7 @@ static void main_loop(void)
                 is_paused = 1;
                 printf("PCM playback paused\n");
             }
-            else
-            {
-                // if pausing doesn't work then set time of last written event as current time, so the next attempt to pause will be in 60 seconds
-                last_written_time = current_time;
-            }
+            else last_written_time = current_time; // if pausing doesn't work then set time of last written event as current time, so the next attempt to pause will be in 60 seconds
         }
     }
 }
@@ -1682,18 +1536,9 @@ int main(int argc, char *argv[])
 
     read_arguments(argc, argv);
 
-    if (daemonize)
-    {
-        if (run_as_daemon_start(argv) < 0)
-        {
-            return 1;
-        }
-    }
+    if (daemonize) if (run_as_daemon_start(argv) < 0) return 1;
 
-    if (start_synth() < 0)
-    {
-        return 2;
-    }
+    if (start_synth() < 0) return 2;
 
     handle_privileges();
 
@@ -1710,10 +1555,7 @@ int main(int argc, char *argv[])
         return 6;
     }
 
-    if (daemonize)
-    {
-        run_as_daemon_finish();
-    }
+    if (daemonize) run_as_daemon_finish();
 
     main_loop();
 
@@ -1722,4 +1564,3 @@ int main(int argc, char *argv[])
     stop_synth();
     return 0;
 }
-

@@ -655,7 +655,7 @@ void CCALL simd_100075CC_c(int32_t counter, uint32_t shift, uint8_t * RESTRICT d
     int32x4_t q9, q10;
     int16x4_t d4, d5;
 
-    if (cs_volume_multiplier == (1 << 11))
+    if (cs_volume_multiplier == 8192)
     {
         q7 = vmovq_n_s16(1 - (int16_t)shift); // negative shift left is positive shift right
 
@@ -1534,4 +1534,3 @@ void CCALL simd_1000B7C9_c(uint8_t * RESTRICT params1, uint8_t * RESTRICT params
 
     *poffs = offset;
 }
-

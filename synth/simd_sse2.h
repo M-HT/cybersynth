@@ -483,7 +483,7 @@ void CCALL simd_100075CC_c(int32_t counter, uint32_t shift, uint8_t * RESTRICT d
 {
     __m128i xmm0, xmm1, xmm2, xmm7;
 
-    if (cs_volume_multiplier == (1 << 11))
+    if (cs_volume_multiplier == 8192)
     {
         xmm7 = _mm_cvtsi32_si128((uint16_t)(shift - 1));
 
@@ -1568,4 +1568,3 @@ void CCALL simd_1000B7C9_c(uint8_t * RESTRICT params1, uint8_t * RESTRICT params
 
     *poffs = offset;
 }
-
