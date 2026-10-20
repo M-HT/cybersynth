@@ -1058,14 +1058,14 @@ static void usage(const char *progname)
         "%s - CyberSynth\n"
         "Usage: %s [OPTIONS]...\n"
         "  -w PATH  Datafiles path (path to directory with *.iss files)\n"
-        "  -p NUM   Polyphony (1-256)\n"
-        "  -e NUM   Effects (0=off, 1=on)\n"
-        "  -c NUM   Chorus effect (0=off, 1=on)\n"
-        "  -r NUM   Reverb effect (0=off, 1=on)\n"
-        "  -g FLT   Volume gain in decibels (0.0-24.0)\n"
-        "  -m NUM   MIDI mode (0=CyberSound, 1=GM, 2=GS)\n"
-        "  -k NUM   Sound cache size in kilobytes (2048-16384)\n"
-        "  -x NUM   SIMD instructions (0=off, 1=on)\n"
+        "  -p NUM   Polyphony (0-128 [default=32])\n"
+        "  -e NUM   Effects (0=off, 1=on [default])\n"
+        "  -c NUM   Chorus effect (0=off, 1=on [default])\n"
+        "  -r NUM   Reverb effect (0=off, 1=on [default])\n"
+        "  -g FLT   Volume gain in decibels (0.0-24.0 [default=0.0])\n"
+        "  -m NUM   MIDI mode (0=CyberSound, 1=GM [default], 2=GS)\n"
+        "  -k NUM   Sound cache size in kilobytes (2048-16384 [default=8192])\n"
+        "  -x NUM   SIMD instructions (0=off, 1=on [default])\n"
         "  -d       Daemonize\n"
         "  -h       Help\n",
         basename,
@@ -1103,7 +1103,7 @@ static void read_arguments(int argc, char *argv[])
                     {
                         i++;
                         j = atoi(argv[i]);
-                        if (j > 0)
+                        if (j >= 0 && j <= 128)
                         {
                             cs_number_of_voices = j;
                         }
